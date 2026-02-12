@@ -229,7 +229,7 @@ fn start_clipboard_monitor(app_handle: tauri::AppHandle, monitor_state: MonitorS
                             let _ = app_handle.emit("clipboard-cleaned", payload);
 
                             let body = format!(
-                                "{} URL(s) bereinigt, {} Parameter entfernt",
+                                "{} URL(s) cleaned, {} parameter(s) removed",
                                 report.urls_modified, report.params_removed
                             );
                             let _ = app_handle

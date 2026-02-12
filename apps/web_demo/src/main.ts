@@ -33,9 +33,9 @@ async function copyOutput(): Promise<void> {
 
   try {
     await navigator.clipboard.writeText(output.value);
-    setStatus("Output kopiert");
+    setStatus("Output copied");
   } catch {
-    setStatus("Kopieren fehlgeschlagen");
+    setStatus("Copy failed");
   }
 }
 
@@ -44,9 +44,9 @@ async function bootstrap(): Promise<void> {
     await init();
     wasmReady = true;
     cleanLive();
-    setStatus("WASM bereit");
+    setStatus("WASM ready");
   } catch {
-    setStatus("WASM konnte nicht geladen werden");
+    setStatus("Failed to load WASM");
   }
 }
 

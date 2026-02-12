@@ -208,12 +208,12 @@ mod tests {
     fn golden_cases_v0() {
         let cases = [
             (
-                "Schau Dir dieses Video an https://youtu.be/IPPTgd2cdvs?si=xe9oYk8nfQ1HxSbb",
-                "Schau Dir dieses Video an https://youtu.be/IPPTgd2cdvs",
+                "Check out this video https://youtu.be/IPPTgd2cdvs?si=xe9oYk8nfQ1HxSbb",
+                "Check out this video https://youtu.be/IPPTgd2cdvs",
             ),
             (
-                "Hier: https://example.com/landing?utm_source=newsletter&utm_medium=email&utm_campaign=spring&utm_content=button",
-                "Hier: https://example.com/landing",
+                "Here: https://example.com/landing?utm_source=newsletter&utm_medium=email&utm_campaign=spring&utm_content=button",
+                "Here: https://example.com/landing",
             ),
             (
                 "Deal: https://shop.example.com/p/123?gclid=EAIaIQobChMI&fbclid=IwAR0abc123",
@@ -244,10 +244,10 @@ mod tests {
                 "Maps: https://www.google.com/maps/place/Berlin/?api=1&query=Berlin",
             ),
             (
-                "Zwei Links: (https://youtu.be/IPPTgd2cdvs?si=abc), und https://example.com/?utm_source=x. Ende.",
-                "Zwei Links: (https://youtu.be/IPPTgd2cdvs), und https://example.com/. Ende.",
+                "Two links: (https://youtu.be/IPPTgd2cdvs?si=abc), and https://example.com/?utm_source=x. End.",
+                "Two links: (https://youtu.be/IPPTgd2cdvs), and https://example.com/. End.",
             ),
-            ("Nur Text ohne URL.", "Nur Text ohne URL."),
+            ("Just text without a URL.", "Just text without a URL."),
             (
                 "Doc: https://example.com/page?utm_source=a#section-2",
                 "Doc: https://example.com/page#section-2",

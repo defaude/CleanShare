@@ -2,29 +2,29 @@
 
 <img src="./CleanShare_logo.png" alt="CleanShare logo" width="320" />
 
-Cross-Platform MVP zum Bereinigen von Share-Texten: Nur Tracking-Parameter aus URLs werden entfernt, restlicher Text bleibt unverändert.
+Cross-platform MVP for cleaning shared text: only tracking parameters are removed from URLs, and the rest of the text stays unchanged.
 
-## Architektur
+## Architecture
 
-- `crates/link_cleaner_core`: Pure Rust Rule-Engine (keine OS-/UI-Abhängigkeiten)
-- `crates/link_cleaner_wasm`: `wasm-bindgen` Wrapper, exportiert `clean_text(input: string): string`
-- `crates/link_cleaner_uniffi`: UniFFI-Scaffold für spätere Swift/Kotlin Bindings
-- `apps/desktop_tauri`: Tauri v2 Desktop MVP (Live-Cleaning + Copy + Clipboard-Monitoring mit OS-Notification)
-- `apps/web_demo`: Minimale Web-Demo (Vite + TypeScript) mit WASM-Integration
+- `crates/link_cleaner_core`: pure Rust rule engine (no OS/UI dependencies)
+- `crates/link_cleaner_wasm`: `wasm-bindgen` wrapper exporting `clean_text(input: string): string`
+- `crates/link_cleaner_uniffi`: UniFFI scaffold for future Swift/Kotlin bindings
+- `apps/desktop_tauri`: Tauri v2 desktop MVP (live cleaning + copy + clipboard monitoring with OS notification)
+- `apps/web_demo`: minimal web demo (Vite + TypeScript) with WASM integration
 
 ## Prerequisites
 
 - Git
 - Node.js LTS + npm
-- Rust via `rustup` (inkl. `rustfmt` und `clippy`)
+- Rust via `rustup` (including `rustfmt` and `clippy`)
 - `wasm-pack`
 - Rust target `wasm32-unknown-unknown`
-- Tauri prerequisites je OS:
+- Tauri prerequisites per OS:
 1. macOS: Xcode Command Line Tools
 2. Windows: Visual Studio Build Tools (Desktop C++ workload)
-3. Linux: WebView/GTK-Systempakete je Distribution
+3. Linux: distro-specific WebView/GTK system packages
 
-Offizielle Tauri Prerequisites: [https://v2.tauri.app/start/prerequisites/](https://v2.tauri.app/start/prerequisites/)
+Official Tauri prerequisites: [https://v2.tauri.app/start/prerequisites/](https://v2.tauri.app/start/prerequisites/)
 
 ## Setup
 
@@ -34,9 +34,9 @@ rustup target add wasm32-unknown-unknown
 cargo install wasm-pack --locked
 ```
 
-## Rust Checks und Tests
+## Rust Checks and Tests
 
-Im Repo-Root:
+In the repository root:
 
 ```bash
 cargo fmt --all --check
@@ -44,15 +44,15 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-## WASM Build und Web Demo
+## WASM Build and Web Demo
 
-WASM-Paket direkt aus `link_cleaner_wasm` bauen:
+Build the WASM package directly from `link_cleaner_wasm`:
 
 ```bash
 wasm-pack build crates/link_cleaner_wasm --target web --out-dir pkg --out-name link_cleaner_wasm
 ```
 
-Web-Demo starten:
+Start the web demo:
 
 ```bash
 cd apps/web_demo
@@ -60,7 +60,7 @@ npm install
 npm run dev
 ```
 
-Hinweis: `npm run dev` baut zuerst das WASM-Paket aus `../../crates/link_cleaner_wasm` nach `apps/web_demo/pkg`.
+Note: `npm run dev` first builds the WASM package from `../../crates/link_cleaner_wasm` into `apps/web_demo/pkg`.
 
 ## Desktop App (Tauri v2)
 
@@ -70,11 +70,11 @@ npm install
 npm run tauri:dev
 ```
 
-Das Tauri-Backend ruft `link_cleaner_core::clean_text` über den Command `clean_text` auf.
-Zusätzlich überwacht es die Zwischenablage: bei erkannten Tracking-Parametern wird der bereinigte Text zurück in die Zwischenablage geschrieben und eine System-Notification angezeigt.
-Der Monitor kann in der UI oben rechts per Checkbox ein-/ausgeschaltet werden.
+The Tauri backend calls `link_cleaner_core::clean_text` through the `clean_text` command.
+It also monitors the clipboard: when tracking parameters are detected, the cleaned text is written back to the clipboard and a system notification is shown.
+The monitor can be toggled via the checkbox in the top-right of the UI.
 
-Alternative (bei installierter Rust Tauri CLI):
+Alternative (if the Rust Tauri CLI is installed):
 
 ```bash
 cd apps/desktop_tauri/src-tauri
@@ -83,7 +83,7 @@ cargo tauri dev
 
 ## UniFFI Scaffold
 
-Bindings später generieren (nach installiertem `uniffi-bindgen`):
+Generate bindings later (after installing `uniffi-bindgen`):
 
 ```bash
 cargo install uniffi_bindgen
@@ -94,29 +94,29 @@ cd crates/link_cleaner_uniffi
 
 ## Cleaning Rules v0
 
-Tracking-Parameter werden konservativ entfernt:
+Tracking parameters are removed conservatively:
 
-- Alle Query-Parameter mit Prefix `utm_`
+- All query parameters with the `utm_` prefix
 - `gclid`, `fbclid`, `mc_cid`, `mc_eid`, `ref`, `ref_src`, `ref_url`, `igshid`, `igsh`, `si`
-- Amazon-spezifisch (v0): `tag`, `linkCode` entfernen, Pfadsegment ab `/ref=` abschneiden
+- Amazon-specific (v0): remove `tag`, `linkCode`, and strip path segments starting at `/ref=`
 
-Bewusst beibehalten:
+Intentionally kept:
 
-- Semantische Parameter wie `t` (Twitter/X Timestamp)
-- Fragmente `#...`
+- Semantic parameters such as `t` (Twitter/X timestamp)
+- Fragments `#...`
 
 ## Golden Tests (Core)
 
-Die 12 angeforderten Golden-Cases liegen in `crates/link_cleaner_core/src/lib.rs` und validieren exakt Input -> Output für YouTube, UTM, gclid/fbclid, Mailchimp, Amazon, Instagram, TikTok, X, Google Maps, Multiple URLs/Punctuation, No URL und Fragment-Erhalt.
+The 12 requested golden cases are located in `crates/link_cleaner_core/src/lib.rs` and validate exact input -> output behavior for YouTube, UTM, gclid/fbclid, Mailchimp, Amazon, Instagram, TikTok, X, Google Maps, multiple URLs/punctuation, no URL, and fragment preservation.
 
 ## Known Limitations
 
-- URL-Erkennung basiert auf `http://` / `https://`; ohne Scheme werden Links in v0 nicht erkannt.
-- Trailing-Punctuation-Heuristik ist konservativ und deckt Standardfälle ab.
-- Mobile Apps sind noch nicht enthalten; UniFFI ist als Scaffold vorbereitet.
+- URL detection is based on `http://` / `https://`; links without a scheme are not detected in v0.
+- Trailing punctuation handling is conservative and covers standard cases.
+- Mobile apps are not included yet; UniFFI is prepared as a scaffold.
 
 ## Next Steps
 
-- Domänenspezifische Regeln versionieren (Feature Flags/Rule Sets)
-- `clean_text_with_report` in Web/Desktop UI anzeigen
-- Mobile Host-Apps (iOS/Android) mit UniFFI-Bindings anbinden
+- Version domain-specific rules (feature flags/rule sets)
+- Show `clean_text_with_report` in the web/desktop UI
+- Integrate UniFFI bindings into mobile host apps (iOS/Android)
