@@ -1,0 +1,13 @@
+[package]
+name = "link_cleaner_uniffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+link_cleaner_core.workspace = true
+uniffi = { workspace = true, features = ["cli"] }

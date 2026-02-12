@@ -1,0 +1,54 @@
+:root {
+  font-family: "SF Pro Text", "Segoe UI", sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+}
+
+.app {
+  max-width: 920px;
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;
+}
+
+h1 {
+  margin: 0;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 10px;
+  font: inherit;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f1f5f9;
+}
+
+#status {
+  min-height: 1.2em;
+  margin: 0;
+  color: #334155;
+}

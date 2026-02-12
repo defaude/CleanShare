@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clean Share Desktop</title>
+  </head>
+  <body>
+    <main class="app">
+      <h1>Clean Share</h1>
+      <p>Tracking-Parameter aus URLs entfernen, restlichen Text unverändert lassen.</p>
+
+      <label for="input">Input</label>
+      <textarea id="input" rows="8" placeholder="Text mit Links einfügen"></textarea>
+
+      <div class="actions">
+        <button id="clean">Clean</button>
+        <button id="copy">Copy output</button>
+      </div>
+
+      <label for="output">Output</label>
+      <textarea id="output" rows="8" readonly></textarea>
+      <p id="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

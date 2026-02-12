@@ -1,0 +1,18 @@
+[package]
+name = "desktop_tauri"
+version = "0.1.0"
+edition = "2024"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+link_cleaner_core = { path = "../../../crates/link_cleaner_core" }
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = [] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[workspace]
