@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Clean Share",
-        "width": 920,
-        "height": 720,
+        "width": 640,
+        "height": 480,
         "resizable": true
       }
     ]

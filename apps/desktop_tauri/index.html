@@ -7,19 +7,26 @@
   </head>
   <body>
     <main class="app">
-      <h1>Clean Share</h1>
-      <p>Tracking-Parameter aus URLs entfernen, restlichen Text unverändert lassen.</p>
-
-      <label for="input">Input</label>
-      <textarea id="input" rows="8" placeholder="Text mit Links einfügen"></textarea>
-
-      <div class="actions">
-        <button id="copy">Copy output</button>
+      <div class="top-row">
+        <label class="monitor-toggle" for="monitor-enabled">
+          <span>Monitor clipboard</span>
+          <input id="monitor-enabled" type="checkbox" checked />
+        </label>
       </div>
 
-      <label for="output">Output</label>
-      <textarea id="output" rows="8" readonly></textarea>
-      <p id="status" aria-live="polite"></p>
+      <div class="text-row">
+        <textarea id="input" rows="8" placeholder="Paste your text here to clean any sharing links"></textarea>
+      </div>
+
+      <div class="text-row">
+        <div class="output-wrap">
+          <textarea id="output" rows="8" readonly></textarea>
+          <button id="copy-overlay" class="copy-overlay" type="button" aria-label="Copy output to clipboard">
+            <span class="copy-overlay__text">Copy to clipboard</span>
+            <span class="copy-overlay__copied">Copied <span class="copy-overlay__check">✓</span></span>
+          </button>
+        </div>
+      </div>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -7,7 +7,7 @@ Cross-Platform MVP zum Bereinigen von Share-Texten: Nur Tracking-Parameter aus U
 - `crates/link_cleaner_core`: Pure Rust Rule-Engine (keine OS-/UI-Abhängigkeiten)
 - `crates/link_cleaner_wasm`: `wasm-bindgen` Wrapper, exportiert `clean_text(input: string): string`
 - `crates/link_cleaner_uniffi`: UniFFI-Scaffold für spätere Swift/Kotlin Bindings
-- `apps/desktop_tauri`: Tauri v2 Desktop MVP (Live-Cleaning + Copy)
+- `apps/desktop_tauri`: Tauri v2 Desktop MVP (Live-Cleaning + Copy + Clipboard-Monitoring mit OS-Notification)
 - `apps/web_demo`: Minimale Web-Demo (Vite + TypeScript) mit WASM-Integration
 
 ## Prerequisites
@@ -69,6 +69,8 @@ npm run tauri:dev
 ```
 
 Das Tauri-Backend ruft `link_cleaner_core::clean_text` über den Command `clean_text` auf.
+Zusätzlich überwacht es die Zwischenablage: bei erkannten Tracking-Parametern wird der bereinigte Text zurück in die Zwischenablage geschrieben und eine System-Notification angezeigt.
+Der Monitor kann in der UI oben rechts per Checkbox ein-/ausgeschaltet werden.
 
 Alternative (bei installierter Rust Tauri CLI):
 
