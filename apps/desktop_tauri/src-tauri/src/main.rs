@@ -101,6 +101,12 @@ fn get_latest_clipboard_cleaned(
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
+        let _ = app.set_dock_visibility(true);
+    }
+
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         let _ = window.unminimize();
         let _ = window.show();
@@ -111,6 +117,12 @@ fn show_main_window(app: &tauri::AppHandle) {
 fn hide_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         let _ = window.hide();
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+        let _ = app.set_dock_visibility(false);
     }
 }
 
@@ -172,11 +184,11 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 
 fn setup_main_window_behavior(app: &tauri::App) {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
-        let close_window = window.clone();
+        let app_handle = app.handle().clone();
         window.on_window_event(move |event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                let _ = close_window.hide();
+                hide_main_window(&app_handle);
             }
         });
 

@@ -81,6 +81,22 @@ cd apps/desktop_tauri/src-tauri
 cargo tauri dev
 ```
 
+Icon assets are committed (instead of generating them on every build) for reproducible packaging.
+When branding changes, regenerate icons from the source logo:
+
+```bash
+cd apps/desktop_tauri
+npm run tauri -- icon ../../CleanShare_logo.png
+```
+
+Then keep only this minimal desktop icon set in `apps/desktop_tauri/src-tauri/icons`:
+- `32x32.png`
+- `128x128.png`
+- `128x128@2x.png`
+- `icon.png`
+- `icon.icns`
+- `icon.ico`
+
 ## UniFFI Scaffold
 
 Generate bindings later (after installing `uniffi-bindgen`):
