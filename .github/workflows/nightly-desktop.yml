@@ -1,0 +1,95 @@
+name: Nightly Desktop Builds
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  desktop-nightly:
+    name: Desktop (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-22.04]
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps/desktop_tauri
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: npm
+          cache-dependency-path: apps/desktop_tauri/package-lock.json
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          WEBKIT_PKG="libwebkit2gtk-4.1-dev"
+          if ! apt-cache show "$WEBKIT_PKG" >/dev/null 2>&1; then
+            WEBKIT_PKG="libwebkit2gtk-4.0-dev"
+          fi
+          sudo apt-get install -y \
+            "$WEBKIT_PKG" \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build desktop bundles
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            npm run tauri:build -- --bundles app
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            npm run tauri:build -- --bundles msi
+          else
+            npm run tauri:build -- --bundles deb,appimage
+          fi
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p nightly-artifacts
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cp -f src-tauri/target/release/desktop_tauri.exe nightly-artifacts/CleanShare-windows-x64.exe
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            cp -f src-tauri/target/release/desktop_tauri nightly-artifacts/CleanShare-macos-unix-binary
+          else
+            cp -f src-tauri/target/release/desktop_tauri nightly-artifacts/CleanShare-linux-unix-binary
+          fi
+
+          if [[ "${{ runner.os }}" == "macOS" ]] && [[ -d src-tauri/target/release/bundle/macos/CleanShare.app ]]; then
+            ditto -c -k --sequesterRsrc --keepParent \
+              src-tauri/target/release/bundle/macos/CleanShare.app \
+              nightly-artifacts/CleanShare-macos.app.zip
+          fi
+
+          if [[ -d src-tauri/target/release/bundle ]]; then
+            while IFS= read -r -d '' file; do
+              cp -f "$file" nightly-artifacts/
+            done < <(find src-tauri/target/release/bundle -type f \
+              \( -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.dmg" \) \
+              -print0)
+          fi
+
+          ls -la nightly-artifacts
+
+      - name: Upload nightly artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ matrix.os }}
+          path: apps/desktop_tauri/nightly-artifacts
+          retention-days: 14
