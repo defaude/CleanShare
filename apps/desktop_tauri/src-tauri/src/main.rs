@@ -1,10 +1,12 @@
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
 
-use tauri::{Emitter, Manager};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_notification::NotificationExt;
 
 #[derive(Clone, serde::Serialize)]
@@ -26,6 +28,11 @@ struct MonitorControl {
 
 #[derive(Clone)]
 struct MonitorState(Arc<MonitorControl>);
+
+const MAIN_WINDOW_LABEL: &str = "main";
+const TRAY_SHOW_TOGGLE_ID: &str = "toggle-window";
+const TRAY_QUIT_ID: &str = "quit";
+const TRAY_ICON_MONO_BYTES: &[u8] = include_bytes!("../../../../CleanShare_logo_mono.png");
 
 impl Default for MonitorState {
     fn default() -> Self {
@@ -93,6 +100,90 @@ fn get_latest_clipboard_cleaned(
     state.get_latest_cleaned()
 }
 
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+fn hide_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        let _ = window.hide();
+    }
+}
+
+fn toggle_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        match window.is_visible() {
+            Ok(true) => hide_main_window(app),
+            Ok(false) | Err(_) => show_main_window(app),
+        }
+    }
+}
+
+fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
+    let toggle_window = MenuItem::with_id(
+        app,
+        TRAY_SHOW_TOGGLE_ID,
+        "Open / Hide CleanShare",
+        true,
+        None::<&str>,
+    )?;
+    let separator = PredefinedMenuItem::separator(app)?;
+    let quit = MenuItem::with_id(app, TRAY_QUIT_ID, "Quit CleanShare", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&toggle_window, &separator, &quit])?;
+
+    let toggle_window_id = toggle_window.id().clone();
+    let quit_id = quit.id().clone();
+
+    let mut tray_builder = TrayIconBuilder::with_id("clean-share-tray")
+        .tooltip("CleanShare")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(move |app, event| {
+            if event.id() == &toggle_window_id {
+                toggle_main_window(app);
+            } else if event.id() == &quit_id {
+                app.exit(0);
+            }
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Down,
+                ..
+            } = event
+            {
+                toggle_main_window(tray.app_handle());
+            }
+        });
+
+    if let Ok(icon) = tauri::image::Image::from_bytes(TRAY_ICON_MONO_BYTES) {
+        tray_builder = tray_builder.icon(icon).icon_as_template(true);
+    } else if let Some(icon) = app.default_window_icon().cloned() {
+        tray_builder = tray_builder.icon(icon);
+    }
+
+    tray_builder.build(app)?;
+    Ok(())
+}
+
+fn setup_main_window_behavior(app: &tauri::App) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        let close_window = window.clone();
+        window.on_window_event(move |event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = close_window.hide();
+            }
+        });
+
+        hide_main_window(app.handle());
+    }
+}
+
 fn start_clipboard_monitor(app_handle: tauri::AppHandle, monitor_state: MonitorState) {
     thread::spawn(move || {
         let mut clipboard = loop {
@@ -144,7 +235,7 @@ fn start_clipboard_monitor(app_handle: tauri::AppHandle, monitor_state: MonitorS
                             let _ = app_handle
                                 .notification()
                                 .builder()
-                                .title("Clean Share")
+                                .title("CleanShare")
                                 .body(&body)
                                 .show();
 
@@ -173,6 +264,15 @@ fn main() {
         .manage(monitor_state)
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                let _ = app.set_dock_visibility(false);
+            }
+
+            setup_tray(app)?;
+            setup_main_window_behavior(app);
+
             let monitor_state = app.state::<MonitorState>().inner().clone();
             start_clipboard_monitor(app.handle().clone(), monitor_state);
             Ok(())

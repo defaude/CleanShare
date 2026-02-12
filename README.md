@@ -1,4 +1,6 @@
-# clean-share
+# CleanShare
+
+<img src="./CleanShare_logo.png" alt="CleanShare logo" width="320" />
 
 Cross-Platform MVP zum Bereinigen von Share-Texten: Nur Tracking-Parameter aus URLs werden entfernt, restlicher Text bleibt unverändert.
 

@@ -10,7 +10,7 @@ tauri-build = { version = "2", features = [] }
 arboard = "3"
 link_cleaner_core = { path = "../../../crates/link_cleaner_core" }
 serde = { version = "1", features = ["derive"] }
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-notification = "2"
 
 [features]
