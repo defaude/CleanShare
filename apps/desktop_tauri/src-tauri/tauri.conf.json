@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Clean Share Desktop",
+  "productName": "CleanShare",
   "version": "0.1.0",
   "identifier": "com.defaude.cleanshare",
   "build": {
@@ -12,10 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "Clean Share",
+        "title": "CleanShare",
         "width": 640,
         "height": 480,
-        "resizable": true
+        "resizable": true,
+        "visible": false,
+        "skipTaskbar": true
       }
     ]
   },
