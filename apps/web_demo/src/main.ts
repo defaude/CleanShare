@@ -3,9 +3,9 @@ import "./styles.css";
 
 const input = document.querySelector<HTMLTextAreaElement>("#input");
 const output = document.querySelector<HTMLTextAreaElement>("#output");
-const cleanButton = document.querySelector<HTMLButtonElement>("#clean");
 const copyButton = document.querySelector<HTMLButtonElement>("#copy");
 const status = document.querySelector<HTMLParagraphElement>("#status");
+let wasmReady = false;
 
 function setStatus(message: string): void {
   if (status) {
@@ -13,13 +13,17 @@ function setStatus(message: string): void {
   }
 }
 
-async function clean(): Promise<void> {
+function cleanLive(): void {
   if (!input || !output) {
     return;
   }
 
+  if (!wasmReady) {
+    output.value = "";
+    return;
+  }
+
   output.value = clean_text(input.value);
-  setStatus("Bereinigt");
 }
 
 async function copyOutput(): Promise<void> {
@@ -38,14 +42,16 @@ async function copyOutput(): Promise<void> {
 async function bootstrap(): Promise<void> {
   try {
     await init();
+    wasmReady = true;
+    cleanLive();
     setStatus("WASM bereit");
   } catch {
     setStatus("WASM konnte nicht geladen werden");
   }
 }
 
-cleanButton?.addEventListener("click", () => {
-  void clean();
+input?.addEventListener("input", () => {
+  cleanLive();
 });
 
 copyButton?.addEventListener("click", () => {
