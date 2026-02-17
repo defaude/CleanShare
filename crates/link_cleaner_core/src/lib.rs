@@ -109,6 +109,11 @@ fn clean_single_url(raw_url: &str) -> (String, bool, usize) {
 
     let mut modified = false;
     let mut removed = 0usize;
+    let is_twitter_url = rewrite_twitter_to_xcancel(&mut url);
+
+    if is_twitter_url {
+        modified = true;
+    }
 
     if strip_amazon_ref_path(&mut url) {
         modified = true;
@@ -118,7 +123,7 @@ fn clean_single_url(raw_url: &str) -> (String, bool, usize) {
         let mut kept = Vec::with_capacity(pairs.len());
 
         for (key, value) in pairs {
-            if should_remove_param(&key) {
+            if should_remove_param(&key) || (is_twitter_url && should_remove_twitter_param(&key)) {
                 removed += 1;
             } else {
                 kept.push((key, value));
@@ -147,6 +152,40 @@ fn clean_single_url(raw_url: &str) -> (String, bool, usize) {
     }
 }
 
+fn rewrite_twitter_to_xcancel(url: &mut Url) -> bool {
+    let host = match url.host_str() {
+        Some(host) => host.to_ascii_lowercase(),
+        None => return false,
+    };
+
+    if !is_twitter_host(&host) {
+        return false;
+    }
+
+    url.set_host(Some("xcancel.com")).is_ok()
+}
+
+fn is_twitter_host(host: &str) -> bool {
+    matches!(
+        host,
+        "x.com"
+            | "www.x.com"
+            | "mobile.x.com"
+            | "m.x.com"
+            | "twitter.com"
+            | "www.twitter.com"
+            | "mobile.twitter.com"
+            | "m.twitter.com"
+    )
+}
+
+fn should_remove_twitter_param(key: &str) -> bool {
+    matches!(
+        key.to_ascii_lowercase().as_str(),
+        "s" | "t" | "cxt" | "cn" | "twclid" | "ref_src" | "ref_url"
+    )
+}
+
 fn collect_query_pairs(query: Option<&str>) -> Option<Vec<(String, String)>> {
     let query = query?;
     let pairs = url::form_urlencoded::parse(query.as_bytes())
@@ -159,12 +198,37 @@ fn should_remove_param(key: &str) -> bool {
     let key = key.to_ascii_lowercase();
 
     key.starts_with("utm_")
+        || key.starts_with("hsa_")
+        || key.starts_with("ga_")
+        || key.starts_with("pk_")
+        || key.starts_with("mc_")
         || matches!(
             key.as_str(),
             "gclid"
+                | "gclsrc"
+                | "dclid"
+                | "msclkid"
                 | "fbclid"
+                | "twclid"
+                | "wbraid"
+                | "gbraid"
+                | "gad_source"
+                | "srsltid"
                 | "mc_cid"
                 | "mc_eid"
+                | "_hsenc"
+                | "_hsmi"
+                | "__hsfp"
+                | "__hssc"
+                | "__hstc"
+                | "mkt_tok"
+                | "oly_anon_id"
+                | "oly_enc_id"
+                | "rb_clickid"
+                | "vero_conv"
+                | "vero_id"
+                | "wickedid"
+                | "yclid"
                 | "ref"
                 | "ref_src"
                 | "ref_url"
@@ -237,7 +301,31 @@ mod tests {
             ),
             (
                 "X: https://twitter.com/user/status/1234567890123456789?ref_src=twsrc%5Etfw&t=20",
-                "X: https://twitter.com/user/status/1234567890123456789?t=20",
+                "X: https://xcancel.com/user/status/1234567890123456789",
+            ),
+            (
+                "X mobile: https://x.com/tristan0x/status/2023437922150871104?s=46",
+                "X mobile: https://xcancel.com/tristan0x/status/2023437922150871104",
+            ),
+            (
+                "X keep params: https://x.com/user/status/1?s=46&t=abc",
+                "X keep params: https://xcancel.com/user/status/1",
+            ),
+            (
+                "X strip more: https://twitter.com/user/status/1?cxt=HHwWgoCz8f&t=abc&cn=ZmxleGlibGVfcmVjcw==&twclid=abc123",
+                "X strip more: https://xcancel.com/user/status/1",
+            ),
+            (
+                "Ads params: https://example.com/p?gclid=1&dclid=2&msclkid=3&wbraid=4&gbraid=5&gad_source=6&srsltid=7",
+                "Ads params: https://example.com/p",
+            ),
+            (
+                "Marketing params: https://example.com/page?mkt_tok=abc&rb_clickid=def&vero_id=ghi&oly_anon_id=jkl",
+                "Marketing params: https://example.com/page",
+            ),
+            (
+                "Non-X keeps t: https://example.com/video?t=120&v=abc",
+                "Non-X keeps t: https://example.com/video?t=120&v=abc",
             ),
             (
                 "Maps: https://www.google.com/maps/place/Berlin/?utm_source=share&api=1&query=Berlin",
