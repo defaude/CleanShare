@@ -2,113 +2,124 @@
 
 ![CleanShare logo](./CleanShare_logo.png)
 
-Just removes tracking stuff from URLs. That's it.
+CleanShare removes tracking parameters from URLs. The project currently targets two delivery formats:
 
-Right now, there's just a desktop app based on Tauri (and I hope it actually works on OS other than MacOS). It sits in
-your menu bar / system tray and monitors the clipboard for texts that contain URLs with tracking parameters. If one is
-found, the tracking stuff is removed from the text and the cleaned text is written back to the clipboard.
+- a macOS Tauri app for local use on a computer
+- a static web app
 
-You can disable the clipboard monitor via the checkbox in the UI and manually copy your text to be cleaned into the
-text field instead.
+Both apps use the same Rust cleaning logic. WASM is used only to expose that Rust logic to the static web app.
 
-## Installation
+## Project Structure
 
-Right now, there's no official release. 👉 Clone this repo, build the whole thing, and run the desktop app.
+- `crates/link_cleaner_core`: shared Rust cleaning engine without UI or platform dependencies
+- `crates/link_cleaner_wasm`: `wasm-bindgen` web bindings for `link_cleaner_core`
+- `apps/desktop_tauri`: macOS Tauri v2 app with clipboard monitoring and manual cleaning
+- `apps/web_demo`: static Vite web app with WASM integration
 
-### Prerequisites
+## Requirements
 
-- Node.js LTS (with npm)
-- Rust stable toolchain (rustup + cargo)
+- Node.js with npm
+- Rust with `rustup` and `cargo`
+- Rust `wasm32-unknown-unknown` target:
+  ```bash
+  rustup target add wasm32-unknown-unknown
+  ```
+- `wasm-pack`:
+  ```bash
+  cargo install wasm-pack
+  ```
 
-```shell
-cd apps/desktop_tauri
-npm install
-npm run tauri:build
-```
+## Desktop App
 
-The built app will be in `desktop_tauri/src-tauri/target/release/bundle` somewhere 😅
+The desktop app is the macOS local app. It can monitor the clipboard for texts that contain URLs with tracking
+parameters, clean the text, and write the cleaned result back to the clipboard. Clipboard monitoring can be toggled in
+the app UI, and text can also be cleaned manually.
 
-
-## Architecture
-
-- `crates/link_cleaner_core`: pure Rust rule engine (no OS/UI dependencies)
-- `crates/link_cleaner_wasm`: `wasm-bindgen` wrapper exporting `clean_text(input: string): string`
-- `crates/link_cleaner_uniffi`: UniFFI scaffold for future Swift/Kotlin bindings
-- `apps/desktop_tauri`: Tauri v2 desktop MVP (live cleaning + copy + clipboard monitoring with OS notification)
-- `apps/web_demo`: minimal web demo (Vite + TypeScript) with WASM integration
-
-## Setup
-
-## Rust Checks and Tests
-
-In the repository root:
-
-```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-```
-
-## WASM Build and Web Demo
-
-Build the WASM package directly from `link_cleaner_wasm`:
-
-```bash
-wasm-pack build crates/link_cleaner_wasm --target web --out-dir pkg --out-name link_cleaner_wasm
-```
-
-Start the web demo:
-
-```bash
-cd apps/web_demo
-npm install
-npm run dev
-```
-
-Note: `npm run dev` first builds the WASM package from `../../crates/link_cleaner_wasm` into `apps/web_demo/pkg`.
-
-## Desktop App (Tauri v2)
+Run the desktop app during development:
 
 ```bash
 cd apps/desktop_tauri
-npm install
+npm ci
 npm run tauri:dev
 ```
 
-The Tauri backend calls `link_cleaner_core::clean_text` through the `clean_text` command.
-It also monitors the clipboard: when tracking parameters are detected, the cleaned text is written back to the clipboard and a system notification is shown.
-The monitor can be toggled via the checkbox in the top-right of the UI.
+Build the desktop app:
 
-Alternative (if the Rust Tauri CLI is installed):
+```bash
+cd apps/desktop_tauri
+npm ci
+npm run tauri:build
+```
+
+The Tauri configuration builds macOS `.app` and `.dmg` bundles.
+
+## Static Web App
+
+The web app lives in `apps/web_demo`, but it is a supported static web target. Its build script compiles the WASM
+bindings first, then runs the TypeScript and Vite build.
+
+Build the static web app:
+
+```bash
+cd apps/web_demo
+npm ci
+npm run build
+```
+
+The output is written to:
+
+```text
+apps/web_demo/dist/
+```
+
+The generated `dist/` directory is statically hostable. Assets use relative paths, so the same output can be served from
+a domain root or from a subpath.
+
+## Checks
+
+Run Rust tests from the repository root:
+
+```bash
+cargo test --workspace
+```
+
+Check the desktop frontend:
+
+```bash
+cd apps/desktop_tauri
+npm ci
+npm run build
+```
+
+Check the Tauri backend:
 
 ```bash
 cd apps/desktop_tauri/src-tauri
-cargo tauri dev
+cargo check --locked
 ```
 
-Icon assets are committed (instead of generating them on every build) for reproducible packaging.
-When branding changes, regenerate icons from the source logo:
+Check the static web app:
+
+```bash
+cd apps/web_demo
+npm ci
+npm run build
+```
+
+## Icon Assets
+
+Icon assets are committed for reproducible desktop packaging. When branding changes, regenerate icons from the source logo:
 
 ```bash
 cd apps/desktop_tauri
 npm run tauri -- icon ../../CleanShare_logo.png
 ```
 
-Then keep only this minimal desktop icon set in `apps/desktop_tauri/src-tauri/icons`:
+Keep this desktop icon set in `apps/desktop_tauri/src-tauri/icons`:
+
 - `32x32.png`
 - `128x128.png`
 - `128x128@2x.png`
 - `icon.png`
 - `icon.icns`
 - `icon.ico`
-
-## UniFFI Scaffold
-
-Generate bindings later (after installing `uniffi-bindgen`):
-
-```bash
-cargo install uniffi_bindgen
-cd crates/link_cleaner_uniffi
-./scripts/generate-bindings.sh swift
-./scripts/generate-bindings.sh kotlin
-```

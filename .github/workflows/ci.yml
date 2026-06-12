@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  rust:
+  rust-core-wasm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,3 +32,59 @@ jobs:
 
       - name: wasm-pack build
         run: wasm-pack build crates/link_cleaner_wasm --target web --out-dir pkg --out-name link_cleaner_wasm
+
+  web-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install wasm target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --locked
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web_demo/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web_demo
+        run: npm ci
+
+      - name: Build web app
+        working-directory: apps/web_demo
+        run: npm run build
+
+  desktop-tauri:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/desktop_tauri/package-lock.json
+
+      - name: Install desktop dependencies
+        working-directory: apps/desktop_tauri
+        run: npm ci
+
+      - name: Build desktop frontend
+        working-directory: apps/desktop_tauri
+        run: npm run build
+
+      - name: Check Tauri app
+        working-directory: apps/desktop_tauri/src-tauri
+        run: cargo check --locked

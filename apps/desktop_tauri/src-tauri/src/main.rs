@@ -268,7 +268,6 @@ fn start_clipboard_monitor(app_handle: tauri::AppHandle, monitor_state: MonitorS
     });
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 fn main() {
     let monitor_state = MonitorState::default();
 
